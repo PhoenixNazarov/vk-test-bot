@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -17,13 +18,24 @@ bot = Bot(token=config.BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher(storage=MemoryStorage())
 
 # Middleware
+if not os.path.isfile(config.MESSAGES_FILE):
+    with open(config.MESSAGES_FILE, 'w') as file:
+        file.write("{}")
+
+try:
+    os.listdir(config.PASSWORDS_DIRECTORY)
+except FileNotFoundError:
+    os.mkdir(config.PASSWORDS_DIRECTORY)
+
+
 cleaner_service = CleanerService(
     bot,
-    CleanerRepositoryJSON(r"messages.json"),
+    CleanerRepositoryJSON(config.MESSAGES_FILE),
 )
+
 authorization_middleware = ModuleMiddleware(
     PasswordsService(
-        PasswordsRepositoryJSON(r"passwords"),
+        PasswordsRepositoryJSON(config.PASSWORDS_DIRECTORY),
         EncryptionService()
     ),
     cleaner_service
